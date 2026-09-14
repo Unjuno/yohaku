@@ -44,3 +44,5 @@ next-env.d.ts
 /.codex/
 /outputs/
 /work/
+# Sites internal project identity; never sync via GitHub MCP.
+/.openai/hosting.json
