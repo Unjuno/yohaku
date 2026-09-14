@@ -1,4 +1,7 @@
-import { GM_GUIDE } from "./config";
+import { GM_GUIDE, FALLBACK_CATALOG_LIMIT, FALLBACK_STORY_IDS } from "./config";
+import { ADDITIONAL_SEEDS } from "./additional-seeds";
+import { DEFAULT_SEARCH_LIMIT, validateSearchInput, type SearchInput } from "./story-contract";
+export type { SearchInput } from "./story-contract";
 
 export type Story = {
   id: string;
@@ -11,7 +14,7 @@ export type Story = {
   initial_state: string;
 };
 
-// 作品原本。追加・修正はこの配列だけを編集する。
+// 作品原本。既存Seedはここ、新規16本はadditional-seeds.ts。配信とレビューはこの集合から生成する。
 export const STORIES: readonly Story[] = [
   {
     id: "memory-city",
@@ -62,6 +65,7 @@ export const STORIES: readonly Story[] = [
   { id: "snow-survival", title: "雪山からの生還", selection_hint: "サバイバル / 判断 / 生還", summary: "吹雪の山小屋で、物資と情報から生還策を考える。", tags: ["サバイバル", "雪山", "判断", "静かな緊張"], atmosphere: "緊張 / 現実感 / 判断", world: "高い雪山には標識路と無人の山小屋が点在し、谷の救助局が無線連絡を受けている。山の天候は地形によって大きく変わり、地図、標識、予報だけでは現在の状態を完全には把握できない。山にいる者は、周囲の観察と手元の備えを頼りに行動する。", initial_state: "吹雪が山小屋の窓を叩いている。あなたと同行者は下山路を見失い、濡れた上着を脱いで暖炉の前にいる。机には地図と無線。壁際には食料、薪、寝袋、救急箱が置かれている。無線から救助局らしい呼びかけが一瞬聞こえ、すぐ雑音に消える。同行者は窓の雪を払い、外の標識を確かめている。" },
   { id: "masked-ball", title: "仮面舞踏会の潜入", selection_hint: "潜入 / 会話 / 証拠", summary: "舞踏会に紛れ、会話と観察から貴族の不正を確かめる。", tags: ["ファンタジー", "潜入", "社交", "ミステリー"], atmosphere: "華やか / 緊張 / 駆け引き", world: "宮廷の大屋敷では、仮面舞踏会が社交と取引の場になっている。客は正式な招待状で迎えられるが、仮面のため肩書きと素顔が一致するとは限らない。宴会場の外では使用人や秘書が屋敷を動かし、私的な部屋や記録は客の目から遠ざけられている。", initial_state: "弦楽器の音が響く屋敷の玄関。あなたは伯爵の不正を確かめるため、招待客として仮面舞踏会へ来ている。手元には正式な招待状と、伯爵の秘書の名前を記した控え。正面は宴会場、脇には庭への扉があり、案内係が『お荷物をお預かりしましょうか』と声をかける。" },
   { id: "shinobi-rescue", title: "忍びの救出任務", selection_hint: "忍び / 偵察 / 救出", summary: "山城に捕らわれた連絡役を救うため、地形と人を探る戦国冒険。", tags: ["戦国", "忍び", "救出", "潜入"], atmosphere: "静かな緊張 / 偵察 / 冒険", world: "山々に城が築かれた戦乱の国では、連絡役が密かに情報を運んでいる。山城には兵だけでなく、薪や食料を運ぶ者、城下で働く者が日々出入りする。忍びは地形、変装、聞き込み、土地の協力者を使って情報を集め、任務を進める。", initial_state: "夕暮れ、山城を見渡す林のはずれ。あなたは、城に捕らわれた連絡役を連れ戻すよう頼まれた忍びだ。正門には見張りが立ち、裏手へ荷車の道が続いている。案内してきた炭焼きが『薪を運ぶ道なら知っている』と話す。足元には城周辺の略図と、商人の旅装を入れた包みがある。" },
+  ...ADDITIONAL_SEEDS,
 ] as const;
 
 export const PLAY_STORY_IDS = [
@@ -81,31 +85,27 @@ export const PLAY_STORY_IDS = [
   "snow-survival",
   "masked-ball",
   "shinobi-rescue",
+  ...ADDITIONAL_SEEDS.map((story) => story.id),
 ] as const;
-export const PLAY_STORIES = PLAY_STORY_IDS.flatMap((id) => {
-  const story = STORIES.find((item) => item.id === id);
-  return story ? [story] : [];
+const storyById = new Map(STORIES.map((story) => [story.id, story]));
+if (storyById.size !== STORIES.length || new Set(PLAY_STORY_IDS).size !== PLAY_STORY_IDS.length) {
+  throw new Error("Duplicate story ID in source or play set");
+}
+export const PLAY_STORIES = PLAY_STORY_IDS.map((id) => {
+  const story = storyById.get(id);
+  if (!story) throw new Error(`Missing play story: ${id}`);
+  return story;
 });
-
-export type SearchInput = {
-  query?: string;
-  tags?: string[];
-  exclude_tags?: string[];
-  limit?: number;
-};
 
 const normalize = (value: string) => value.normalize("NFKC").toLocaleLowerCase("ja").trim();
 
-export function searchStories(input: SearchInput) {
+/** Full selection-only listing when limit is omitted; recommendations use searchStories. */
+export function listStories(rawInput: SearchInput = {}) {
+  const input = validateSearchInput(rawInput);
   const query = normalize(input.query ?? "");
   const wantedTags = (input.tags ?? []).map(normalize).filter(Boolean);
   const excludedTags = (input.exclude_tags ?? []).map(normalize).filter(Boolean);
-  const limit = input.limit ?? 3;
-  if (!Number.isInteger(limit) || limit < 1 || limit > 20) {
-    throw new RangeError("limit must be an integer from 1 to 20");
-  }
-
-  return PLAY_STORIES.map((story, index) => {
+  const ranked = PLAY_STORIES.map((story, index) => {
     const title = normalize(story.title);
     const summary = normalize(story.summary);
     const tags = story.tags.map(normalize);
@@ -124,43 +124,43 @@ export function searchStories(input: SearchInput) {
     return { story, score, index, excluded, wantedMismatch };
   })
     .filter(({ score, excluded, wantedMismatch }) => score > 0 && !excluded && !wantedMismatch)
-    .sort((a, b) => b.score - a.score || a.index - b.index)
-    .slice(0, limit)
-    .map(({ story }) => ({
-      id: story.id,
-      title: story.title,
-      selection_hint: story.selection_hint,
-      summary: story.summary,
-      tags: story.tags,
-    }));
+    .sort((a, b) => b.score - a.score || a.index - b.index);
+  const selected = input.limit === undefined ? ranked : ranked.slice(0, input.limit);
+  return selected.map(({ story }) => ({
+    id: story.id, title: story.title, selection_hint: story.selection_hint,
+    summary: story.summary, tags: [...story.tags],
+  }));
+}
+
+export function searchStories(input: SearchInput = {}) {
+  return listStories({ ...input, limit: input.limit ?? DEFAULT_SEARCH_LIMIT });
 }
 
 export function getStory(id: string) {
   const story = PLAY_STORIES.find((item) => item.id === id);
   if (!story) return null;
   return {
-    id: story.id,
-    title: story.title,
-    world: story.world,
-    initial_state: story.initial_state,
-    gm_guide: GM_GUIDE,
+    id: story.id, title: story.title, world: story.world,
+    initial_state: story.initial_state, gm_guide: GM_GUIDE,
   };
 }
 
-// 汎用Web取得向けの一回完結Catalog。MCPの軽量検索結果とは分離しておく。
-export function getFallbackCatalogStories(input: SearchInput) {
-  return searchStories(input).flatMap((result) => {
-    const story = PLAY_STORIES.find((item) => item.id === result.id);
-    if (!story) return [];
-    return [{
-      id: story.id,
-      title: story.title,
-      selection_hint: story.selection_hint,
-      summary: story.summary,
-      tags: story.tags,
-      world: story.world,
-      initial_state: story.initial_state,
-      gm_guide: GM_GUIDE,
-    }];
+/** Bounded one-fetch subset. The common guide is serialized once by the route. */
+export function getFallbackCatalogStories(rawInput: SearchInput = {}) {
+  const input = validateSearchInput(rawInput);
+  const limit = input.limit ?? FALLBACK_CATALOG_LIMIT;
+  // Validate the configured default too, rather than silently clamping it.
+  validateSearchInput({ limit });
+  const unfiltered = !normalize(input.query ?? "") &&
+    !(input.tags ?? []).some((tag) => normalize(tag)) &&
+    !(input.exclude_tags ?? []).some((tag) => normalize(tag));
+  let summaries = listStories({ ...input, limit: undefined });
+  if (unfiltered) {
+    const priority = new Map<string, number>(FALLBACK_STORY_IDS.map((id, index) => [id, index]));
+    summaries = summaries.sort((a, b) => (priority.get(a.id) ?? FALLBACK_STORY_IDS.length) - (priority.get(b.id) ?? FALLBACK_STORY_IDS.length));
+  }
+  return summaries.slice(0, limit).map((summary) => {
+    const story = storyById.get(summary.id)!;
+    return { ...summary, world: story.world, initial_state: story.initial_state };
   });
 }
