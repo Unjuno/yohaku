@@ -8,16 +8,9 @@ import { ArrowDown, ArrowUpRight, Copy, ExternalLink, Link2 } from "lucide-react
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { startWebMcp, type WebModelContext } from "@/lib/webmcp";
 
 type Config = { name: string; nameEn: string; siteUrl: string; sponsorsUrl: string };
-
-declare global {
-  interface Document {
-    modelContext?: {
-      registerTool(tool: { name: string; description: string; inputSchema: Record<string, unknown>; execute: (input: Record<string, unknown>) => Promise<unknown> }, options?: { signal?: AbortSignal }): Promise<void> | void;
-    };
-  }
-}
 
 export function YohakuExperience({ config }: { config: Config }) {
   const [manualText, setManualText] = useState("");
@@ -27,31 +20,8 @@ export function YohakuExperience({ config }: { config: Config }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    const context = document.modelContext;
-    if (!context) { queueMicrotask(() => setWebMcp("unavailable")); return; }
-    const controller = new AbortController();
-    try {
-      context.registerTool({
-        name: "search_stories",
-        description: "利用者が遊びたい雰囲気や条件に合う作品を探すときに呼ぶ。候補のid、title、summary、tagsだけを返す。本文、架空の作品、プレイ状態は返さない。",
-        inputSchema: { type: "object", properties: { query: { type: "string", description: "好みや雰囲気を表す検索語" }, tags: { type: "array", items: { type: "string" }, description: "すべて一致させる任意タグ" }, exclude_tags: { type: "array", items: { type: "string" }, description: "除外する任意タグ" }, limit: { type: "integer", minimum: 1, maximum: 10, default: 3 } }, required: ["query"] },
-        execute: async (input) => {
-          const params = new URLSearchParams({ query: String(input.query ?? ""), limit: String(input.limit ?? 3) });
-          if (Array.isArray(input.tags)) input.tags.forEach((tag) => params.append("tag", String(tag)));
-          if (Array.isArray(input.exclude_tags)) input.exclude_tags.forEach((tag) => params.append("exclude_tag", String(tag)));
-          const catalog = await (await fetch(`/api/stories?${params}`)).json() as { stories?: Array<{ id: string; title: string; summary: string; tags: string[] }> };
-          return { stories: (catalog.stories ?? []).map(({ id, title, summary, tags }) => ({ id, title, summary, tags })) };
-        },
-      }, { signal: controller.signal });
-      context.registerTool({
-        name: "get_story",
-        description: "選んだ作品の初期設定を取得・再参照するときに呼ぶ。world、initial_state、共通GMガイドを原文で返す。チャット開始や状態保存はしない。",
-        inputSchema: { type: "object", properties: { id: { type: "string", description: "search_stories が返した作品ID" } }, required: ["id"] },
-        execute: async (input) => (await fetch(`/api/stories/${encodeURIComponent(String(input.id ?? ""))}`)).json(),
-      }, { signal: controller.signal });
-      queueMicrotask(() => setWebMcp("ready"));
-    } catch { queueMicrotask(() => setWebMcp("unavailable")); }
-    return () => controller.abort();
+    const context = (document as Document & { modelContext?: WebModelContext }).modelContext;
+    return startWebMcp(context, setWebMcp);
   }, []);
 
   useEffect(() => { if (fallbackOpen) requestAnimationFrame(() => textareaRef.current?.select()); }, [fallbackOpen]);
@@ -84,7 +54,7 @@ export function YohakuExperience({ config }: { config: Config }) {
 
 今の気分を必要なら0〜1問だけ確認してください。MCP / Site Toolsが使える場合はsearch_storiesで候補を探し、作品決定後にget_storyを使ってください。
 
-使えない場合は、次の互換Catalogを一度だけ取得してください。
+使えない場合は、次の互換Catalogを一度取得してください。おすすめ作品のworldとinitial_state、共通のgm_guideが入っています。全作品ではありません。希望に合わなければcatalog_urlの一覧から探してください。
 ${compatUrl}
 
 私の希望に合う作品を決めたら、取得したworld、initial_state、gm_guideを使ってGMとして始めてください。取得できない場合は、取得できたふりをせず伝えてください。
