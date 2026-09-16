@@ -1,4 +1,5 @@
 import type { Story } from "./stories";
+import { EXPERIENCE_GAP_SEEDS } from "./experience-gap-seeds";
 
 // 世界の前提と開始時点だけ。解法・秘密の台本・結末は置かない。
 export const ADDITIONAL_SEEDS: readonly Story[] = [
@@ -114,4 +115,5 @@ export const ADDITIONAL_SEEDS: readonly Story[] = [
     world: "この街の舞踏室では、足を置いた面がその人の床になる。壁を歩く者と天井を滑る者が、同じ曲を違う向きから踊っている。決まった振り付けだけでなく、相手の歩幅や身振りに応じて即興で踊る集まりも開かれる。",
     initial_state: "夕暮れの舞踏室。初めて訪れたあなたの前で、靴音が壁を上っていく。中央には広い床、柱には手を添えられる帯、天井の窓には街明かり。練習相手が一歩だけ壁へ移り、こちらへ手を差し出す。楽団がゆっくりした拍を刻み始め、相手は『最初は、歩くところから』と言って待っている。",
   },
+  ...EXPERIENCE_GAP_SEEDS,
 ];
