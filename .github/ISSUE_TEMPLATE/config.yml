@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: YOHAKUで遊ぶ
+    url: https://yohaku-trpg.unjuno.chatgpt.site/
+    about: 公開中のYOHAKUを開きます
+  - name: Seed Review
+    url: https://yohaku-trpg.unjuno.chatgpt.site/review
+    about: 現在のSeedのworldとinitial_stateを確認します
