@@ -91,7 +91,8 @@ Seed投稿はおおむね次のように扱います。
 ## リポジトリ構成
 
 - `lib/stories.ts` — 既存Seedと検索・取得処理
-- `lib/additional-seeds.ts` — 追加Seed
+- `lib/additional-seeds.ts` — 追加Seedの集合
+- `lib/experience-gap-seeds.ts` — 既存Catalogで薄かった体験領域を補うSeed
 - `lib/config.ts` — 共通GMガイド
 - `app/mcp/` — Remote MCP
 - `app/api/stories/` — HTTP Story API
