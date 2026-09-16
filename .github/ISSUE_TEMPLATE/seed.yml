@@ -1,0 +1,104 @@
+name: Seedを投稿する
+description: YOHAKU向けの新しい「世界と最初の瞬間」を提案します
+title: "[Seed] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        YOHAKUは完成シナリオではなく、`world`と`initial_state`だけをSeedとして持ちます。
+
+        **未来、正解、犯人、攻略法、固定エンディングは書かないでください。**
+        未提示の細部はプレイ中にGMが具体化します。
+
+  - type: input
+    id: title
+    attributes:
+      label: 作品名
+      placeholder: 例：最後の郵便船
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: 一言でいうと？
+      description: ネタバレなしで、何をする体験かが分かる1〜2文。
+      placeholder: 例：移ろう島々を結ぶ船で、景色を手がかりに手紙を届ける旅。
+    validations:
+      required: true
+
+  - type: input
+    id: experience
+    attributes:
+      label: 遊びの感触
+      description: 2〜4語程度。ジャンルだけでなく、プレイヤーが何をするかを含めてください。
+      placeholder: 例：幻想的 / 穏やか / 旅
+    validations:
+      required: true
+
+  - type: input
+    id: tags
+    attributes:
+      label: タグ
+      description: カンマ区切りで数個。
+      placeholder: 幻想, 航海, 手紙, 穏やか
+    validations:
+      required: true
+
+  - type: textarea
+    id: world
+    attributes:
+      label: world — 世界観
+      description: |
+        世界の基本法則、文化、日常、その作品固有の前提を書いてください。
+        GMへの命令、攻略法、隠された真相、未来の出来事は書かないでください。
+      placeholder: |
+        この世界では何が普通と違う？
+        その違いは、人々の日常やプレイヤーの行動にどう関わる？
+    validations:
+      required: true
+
+  - type: textarea
+    id: initial_state
+    attributes:
+      label: initial_state — 最初の瞬間
+      description: |
+        今いる場所、今起きていること、見える・聞こえる・触れられるものを書いてください。
+        人・物・場所・音・記録・装置など、複数の方向へ自然に動ける足場があると理想です。
+      placeholder: |
+        いま、あなたはどこにいる？
+        何が起きている？
+        何を見たり、聞いたり、調べたり、誰に話したりできる？
+    validations:
+      required: true
+
+  - type: textarea
+    id: difference
+    attributes:
+      label: 既存Seedとの違い
+      description: 似ている作品があれば、それと中心体験がどう違うか。分からなければ空欄でも構いません。
+      placeholder: 舞台ではなく「何をして遊ぶか」の違いがあるとレビューしやすいです。
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: 補足
+      description: Seed本文には入れなくてよい意図や、レビュー時に伝えたいことがあれば。
+
+  - type: checkboxes
+    id: seed_policy
+    attributes:
+      label: Seedルールの確認
+      options:
+        - label: 固定プロット・固定結末・攻略手順・完全な真相をSeed本文に入れていません。
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: rights
+    attributes:
+      label: 投稿内容について
+      options:
+        - label: 自分が投稿する権利を持つ内容です。Issueが公開され、採用時にYOHAKU側で文面を整理・編集してリポジトリやサイトへ掲載することを了承します。
+    validations:
+      required: true
