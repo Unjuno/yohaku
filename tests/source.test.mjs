@@ -9,13 +9,14 @@ import { readHostingBindings } from "../scripts/hosting-bindings.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const compiled = compileSources(root, [
-  "lib/config.ts", "lib/experience-gap-seeds.ts", "lib/additional-seeds.ts", "lib/story-contract.ts", "lib/stories.ts", "lib/story-http.ts", "lib/webmcp.ts",
+  "lib/config.ts", "lib/experience-gap-seeds.ts", "lib/field-seeds.ts", "lib/additional-seeds.ts", "lib/story-contract.ts", "lib/stories.ts", "lib/story-http.ts", "lib/webmcp.ts",
   "app/api/stories/route.ts", "app/api/compat/stories/route.ts",
 ]);
 after(compiled.clean);
 const { STORIES, PLAY_STORIES, listStories, searchStories, getStory, getFallbackCatalogStories } = await compiled.import("lib/stories.ts");
 const { ADDITIONAL_SEEDS } = await compiled.import("lib/additional-seeds.ts");
 const { EXPERIENCE_GAP_SEEDS } = await compiled.import("lib/experience-gap-seeds.ts");
+const { FIELD_SEEDS } = await compiled.import("lib/field-seeds.ts");
 const { GM_GUIDE, FALLBACK_CATALOG_LIMIT } = await compiled.import("lib/config.ts");
 const { parseSearchParams, SEARCH_INPUT_SCHEMA, MAX_SEARCH_LIMIT } = await compiled.import("lib/story-contract.ts");
 const { createWebTools, startWebMcp } = await compiled.import("lib/webmcp.ts");
@@ -25,12 +26,15 @@ const request = (query="") => new Request(`https://yohaku.test/api/stories${quer
 const rowKeys = ["id", "selection_hint", "summary", "tags", "title"].sort();
 const tick = () => new Promise(resolve => setImmediate(resolve));
 const canonical = value => JSON.stringify(Object.fromEntries(Object.entries(value).sort(([a],[b]) => a.localeCompare(b))));
+const baseSeedCount = 16;
+const expectedCount = baseSeedCount + ADDITIONAL_SEEDS.length;
 
-test("48 unique IDs, 32 additional Seeds, 16 experience-gap Seeds, original 16 content unchanged", () => {
-  assert.equal(STORIES.length, 48); assert.equal(PLAY_STORIES.length, 48);
-  assert.equal(ADDITIONAL_SEEDS.length, 32); assert.equal(EXPERIENCE_GAP_SEEDS.length, 16);
-  assert.equal(new Set(STORIES.map(s=>s.id)).size, 48); assert.equal(new Set(STORIES.map(s=>s.title)).size,48);
-  assert.deepEqual(ADDITIONAL_SEEDS.slice(-16).map(s=>s.id), EXPERIENCE_GAP_SEEDS.map(s=>s.id));
+test("Catalog source is unique; all Seed groups are included; original 16 content unchanged", () => {
+  assert.equal(STORIES.length, expectedCount); assert.equal(PLAY_STORIES.length, expectedCount);
+  assert.equal(EXPERIENCE_GAP_SEEDS.length, 16); assert.equal(FIELD_SEEDS.length, 8);
+  assert.equal(new Set(STORIES.map(s=>s.id)).size, expectedCount);
+  assert.equal(new Set(STORIES.map(s=>s.title)).size, expectedCount);
+  for (const seed of [...EXPERIENCE_GAP_SEEDS, ...FIELD_SEEDS]) assert.ok(ADDITIONAL_SEEDS.some(s=>s.id===seed.id), seed.id);
   const old = JSON.parse(readFileSync(new URL("./fixtures/original-seed-hashes.json", import.meta.url), "utf8"));
   for (const [id, hash] of Object.entries(old)) {
     assert.equal(createHash("sha256").update(canonical(STORIES.find(s=>s.id===id))).digest("hex"), hash, id);
@@ -44,18 +48,18 @@ for (const seed of ADDITIONAL_SEEDS) test(`Seed shape and discovery: ${seed.id}`
   assert.equal(searchStories({ query:seed.title })[0].id,seed.id);
   assert.equal(getStory(seed.id).initial_state,seed.initial_state);
 });
-test("full Catalog returns 48, even though search has a 20-result cap", async () => {
+test("full Catalog returns every source story even though search has a 20-result cap", async () => {
   const response = catalogRoute.GET(request()); assert.equal(response.status,200);
-  const data = await response.json(); assert.equal(data.catalog_mode,"selection_only"); assert.equal(data.count,48);
+  const data = await response.json(); assert.equal(data.catalog_mode,"selection_only"); assert.equal(data.count,expectedCount);
   for (const row of data.stories) {
     assert.deepEqual(Object.keys(row).filter(k=>k!=="story_url").sort(),rowKeys);
     assert.ok(row.story_url.endsWith(`/api/stories/${row.id}`));
   }
-  assert.equal(listStories().length,48); assert.equal(searchStories().length,3);
+  assert.equal(listStories().length,expectedCount); assert.equal(searchStories().length,3);
   assert.equal(searchStories({limit:20}).length,20);
   assert.equal((await catalogRoute.GET(request("?limit=20")).json()).count,20);
 });
-for (const raw of ["0","-1","NaN","21","32","48","1.5","","abc","Infinity","1e1"])
+for (const raw of ["0","-1","NaN","21",String(expectedCount),"1.5","","abc","Infinity","1e1"])
   test(`invalid explicit limit ${JSON.stringify(raw)} is 400, never silently clamped`,async()=>{
     const response=catalogRoute.GET(request(`?limit=${encodeURIComponent(raw)}`));
     assert.equal(response.status,400); assert.equal((await response.json()).error,"invalid_limit");
@@ -71,7 +75,7 @@ test("all tags and exclude tags retain shared behavior",()=>{
 });
 test("one-fetch default is bounded; common guide appears once",async()=>{
   const data=await compatRoute.GET(request()).json();
-  assert.equal(data.count,FALLBACK_CATALOG_LIMIT); assert.equal(data.total_available,48);
+  assert.equal(data.count,FALLBACK_CATALOG_LIMIT); assert.equal(data.total_available,expectedCount);
   assert.equal(data.selection_scope,"recommended_subset"); assert.equal(data.gm_guide,GM_GUIDE);
   assert.ok(data.stories.some(s=>s.id==="unmapped-planet")); assert.ok(data.stories.some(s=>s.id==="rain-orchestra"));
   for(const s of data.stories) assert.ok(s.world&&s.initial_state&&!Object.hasOwn(s,"gm_guide"));
@@ -91,7 +95,7 @@ test("WebMCP preserves selection_hint/count and matches REST and shared MCP core
   const [tool]=createWebTools(routeFetch);
   assert.equal(tool.inputSchema.properties.limit.maximum,MAX_SEARCH_LIMIT);
   assert.ok(!tool.inputSchema.required?.includes("query"));
-  for(const query of ["","静かな","怖くないSF","探偵","ホラー","潜入","音楽","ダンス","園芸","ラジオ","コメディ","恋愛","教育","調停","経営","共生","別れ","zzzz"]){
+  for(const query of ["","静かな","怖くないSF","探偵","ホラー","潜入","音楽","ダンス","園芸","ラジオ","コメディ","恋愛","教育","調停","経営","共生","別れ","報道","保育","農業","物流","科学","儀礼","zzzz"]){
     const result=await tool.execute({query,limit:20});
     const rest=await catalogRoute.GET(request(`?query=${encodeURIComponent(query)}&limit=20`)).json();
     assert.deepEqual(result,{stories:searchStories({query,limit:20}),count:rest.count});
@@ -99,7 +103,7 @@ test("WebMCP preserves selection_hint/count and matches REST and shared MCP core
     result.stories.forEach(row=>assert.deepEqual(Object.keys(row).sort(),rowKeys));
   }
 });
-test("WebMCP gets every one of the 48 stories",async()=>{
+test("WebMCP gets every story in the current source",async()=>{
   const [,tool]=createWebTools(routeFetch);
   for(const story of STORIES) assert.deepEqual(await tool.execute({id:story.id}),getStory(story.id));
 });
