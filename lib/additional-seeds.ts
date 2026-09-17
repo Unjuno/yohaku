@@ -1,5 +1,6 @@
 import type { Story } from "./stories";
 import { EXPERIENCE_GAP_SEEDS } from "./experience-gap-seeds";
+import { FIELD_SEEDS } from "./field-seeds";
 
 // 世界の前提と開始時点だけ。解法・秘密の台本・結末は置かない。
 export const ADDITIONAL_SEEDS: readonly Story[] = [
@@ -116,4 +117,5 @@ export const ADDITIONAL_SEEDS: readonly Story[] = [
     initial_state: "夕暮れの舞踏室。初めて訪れたあなたの前で、靴音が壁を上っていく。中央には広い床、柱には手を添えられる帯、天井の窓には街明かり。練習相手が一歩だけ壁へ移り、こちらへ手を差し出す。楽団がゆっくりした拍を刻み始め、相手は『最初は、歩くところから』と言って待っている。",
   },
   ...EXPERIENCE_GAP_SEEDS,
+  ...FIELD_SEEDS,
 ];

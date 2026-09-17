@@ -8,7 +8,7 @@ YOHAKUは、外部LLMをGMとして遊ぶAIソロTRPGのSeedライブラリで�
 - Seed review: https://yohaku-trpg.unjuno.chatgpt.site/review
 - Story catalog: https://yohaku-trpg.unjuno.chatgpt.site/api/stories
 
-現在のCatalogには48作品があります。
+公開中の作品数と一覧はStory catalogを参照してください。
 
 ## Seedとは
 
@@ -93,6 +93,7 @@ Seed投稿はおおむね次のように扱います。
 - `lib/stories.ts` — 既存Seedと検索・取得処理
 - `lib/additional-seeds.ts` — 追加Seedの集合
 - `lib/experience-gap-seeds.ts` — 既存Catalogで薄かった体験領域を補うSeed
+- `lib/field-seeds.ts` — 報道・ケア・保育・インフラ・科学・儀礼・農業・物流のSeed
 - `lib/config.ts` — 共通GMガイド
 - `app/mcp/` — Remote MCP
 - `app/api/stories/` — HTTP Story API
