@@ -10,8 +10,8 @@
     "start": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js dev --config dist/server/wrangler.json --local --persist-to .wrangler/state --ip 127.0.0.1 --inspector-port 0",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
-    "test": "node --test tests/source.test.mjs",
-    "test:types": "tsc --noEmit --strict --skipLibCheck --target es2022 --module esnext --moduleResolution bundler --lib es2022,dom lib/story-contract.ts lib/stories.ts lib/story-http.ts lib/webmcp.ts",
+    "test": "node --test tests/source.test.mjs tests/release.test.mjs tests/public-smoke.test.mjs",
+    "test:types": "tsc --noEmit --strict --skipLibCheck --target es2022 --module esnext --moduleResolution bundler --lib es2022,dom lib/discovery.ts lib/entrance.ts lib/story-contract.ts lib/stories.ts lib/story-http.ts lib/webmcp.ts",
     "check:sync": "node scripts/check-sync.mjs",
     "verify": "npm run build && node scripts/verify-yohaku.mjs"
   },
