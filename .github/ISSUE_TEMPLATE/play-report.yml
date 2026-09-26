@@ -1,22 +1,21 @@
-name: プレイ中の問題を報告する
-description: 1回のプレイで起きた没入感・進行上の問題を報告します
-title: "[Play report] "
+name: 遊んだ感想・問題を送る
+description: 開始前のつまずき、音声ログのない報告、遊んだ感想も送れます
+title: '[Play report] '
 body:
   - type: markdown
     attributes:
-      value: |
-        再現率が分からなくても構いません。1回のプレイで気になった挙動を、そのまま報告してください。
-
-        個人情報、秘密、共有したくない会話内容は削除してください。
-
+      value: |-
+        1回だけの体験で構いません。音声の書き起こしや再現手順は必須ではありません。
+        このIssueは公開されます。個人情報、秘密、共有したくない会話を載せないでください。会話全体の共有リンクは不要です。
+        認証情報の漏えいなど、公開すべきでないセキュリティ情報はここに書かないでください。
   - type: input
     id: story
     attributes:
       label: 作品名
       placeholder: 例：落ちていく部屋
+      description: 開始前で作品名が分からない場合は空欄で構いません。
     validations:
-      required: true
-
+      required: false
   - type: dropdown
     id: mode
     attributes:
@@ -28,12 +27,12 @@ body:
         - その他
     validations:
       required: true
-
   - type: dropdown
     id: category
     attributes:
       label: 問題の種類
       options:
+        - 開始ボタン・コピー・貼り付けで止まった
         - GM内部ルール・原本・API/MCPなどをプレイヤー向けに説明した
         - 未知の世界情報をプレイヤー側に作らせた
         - その世界の住人なら当然知ることを知識クイズにした
@@ -41,47 +40,69 @@ body:
         - 予定された筋書きや正解へ強引に戻した
         - 紹介されたジャンル・雰囲気を勝手に変えた
         - 作品選択・検索・取得で問題が起きた
+        - 説明が足りず最初の行動が分からなかった
+        - 中断・聞き直しができなかった
+        - 特に問題はない・感想を送りたい
         - その他
     validations:
       required: true
-
   - type: textarea
     id: happened
     attributes:
-      label: 何が起きた？
-      description: できるだけ短く、問題だと感じた点を書いてください。
+      label: 起きたこと・感想
+      description: 良かったこと、困ったこと、どちらも短く書いてください。
     validations:
       required: true
-
   - type: textarea
     id: excerpt
     attributes:
       label: 問題が起きた前後の短い抜粋
-      description: 必要な範囲だけ。個人情報や共有したくない内容は削除してください。
+      description: 任意。音声でログがなければ不要です。個人情報を除いた必要最小限の文だけを記載してください。
       render: text
     validations:
-      required: true
-
+      required: false
   - type: textarea
     id: expected
     attributes:
       label: どう返ってほしかった？
       description: 厳密な正解でなくて構いません。没入感を保つならどうしてほしかったかを書いてください。
     validations:
-      required: true
-
+      required: false
   - type: input
     id: client
     attributes:
       label: 分かる範囲の環境
       description: モデル名、アプリ、ブラウザなど。分からなければ空欄で構いません。
       placeholder: 例：ChatGPT / GPT Live
-
+  - type: dropdown
+    id: started
+    attributes:
+      label: 物語を始められた？（任意）
+      options:
+        - 始められた
+        - 開始前に止まった
+        - まだ試していない
+  - type: dropdown
+    id: duration
+    attributes:
+      label: 遊んだ時間（任意・おおよそ）
+      options:
+        - 未計測・覚えていない
+        - 5分未満
+        - 5〜10分ほど
+        - 10分より長い
+  - type: dropdown
+    id: want_again
+    attributes:
+      label: また遊びたい？（任意）
+      options:
+        - 遊びたい
+        - まだ分からない
+        - 今は遊びたいと思わない
   - type: checkboxes
     id: privacy
     attributes:
       label: 公開内容の確認
       options:
         - label: このIssueが公開されることを理解し、個人情報や共有したくない会話を削除しました。
-    validations:
-      required: true
+          required: true
