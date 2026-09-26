@@ -1,5 +1,6 @@
 import { GM_GUIDE, FALLBACK_CATALOG_LIMIT, FALLBACK_STORY_IDS } from "./config";
 import { ADDITIONAL_SEEDS } from "./additional-seeds";
+import { INTRO_STORY_IDS, resolveDiscoveryIntent } from "./discovery";
 import { DEFAULT_SEARCH_LIMIT, validateSearchInput, type SearchInput } from "./story-contract";
 export type { SearchInput } from "./story-contract";
 
@@ -102,9 +103,16 @@ const normalize = (value: string) => value.normalize("NFKC").toLocaleLowerCase("
 /** Full selection-only listing when limit is omitted; recommendations use searchStories. */
 export function listStories(rawInput: SearchInput = {}) {
   const input = validateSearchInput(rawInput);
-  const query = normalize(input.query ?? "");
-  const wantedTags = (input.tags ?? []).map(normalize).filter(Boolean);
-  const excludedTags = (input.exclude_tags ?? []).map(normalize).filter(Boolean);
+  const rawQuery = normalize(input.query ?? "");
+  // Exact titles/IDs are never reinterpreted as mood aliases.
+  const exactStory = PLAY_STORIES.some(story => normalize(story.id) === rawQuery || normalize(story.title) === rawQuery);
+  const intent = resolveDiscoveryIntent(exactStory ? "" : rawQuery);
+  const query = exactStory ? rawQuery : intent.query;
+  const wantedTags = [...(input.tags ?? []), ...intent.requiredTags].map(normalize).filter(Boolean);
+  const excludedTags = [...(input.exclude_tags ?? []), ...intent.excludedTags].map(normalize).filter(Boolean);
+  const anyTags = intent.anyTags.map(normalize);
+  const introductory = intent.introductory || (!rawQuery && input.limit !== undefined && !wantedTags.length && !excludedTags.length);
+  const priority = new Map<string, number>(INTRO_STORY_IDS.map((id, index) => [id, index]));
   const ranked = PLAY_STORIES.map((story, index) => {
     const title = normalize(story.title);
     const summary = normalize(story.summary);
@@ -119,12 +127,14 @@ export function listStories(rawInput: SearchInput = {}) {
       if (searchable.includes(token)) score += 2;
     }
     if (wantedTags.length && wantedTags.every((tag) => tags.includes(tag))) score += 6;
-    const wantedMismatch = wantedTags.some((tag) => !tags.includes(tag));
+    const wantedMismatch = wantedTags.some((tag) => !tags.includes(tag)) || (anyTags.length > 0 && !anyTags.some(tag => tags.includes(tag)));
     const excluded = excludedTags.some((tag) => tags.includes(tag));
     return { story, score, index, excluded, wantedMismatch };
   })
     .filter(({ score, excluded, wantedMismatch }) => score > 0 && !excluded && !wantedMismatch)
-    .sort((a, b) => b.score - a.score || a.index - b.index);
+    .sort((a, b) => b.score - a.score ||
+      (introductory ? (priority.get(a.story.id) ?? INTRO_STORY_IDS.length) - (priority.get(b.story.id) ?? INTRO_STORY_IDS.length) : 0) ||
+      a.index - b.index);
   const selected = input.limit === undefined ? ranked : ranked.slice(0, input.limit);
   return selected.map(({ story }) => ({
     id: story.id, title: story.title, selection_hint: story.selection_hint,
