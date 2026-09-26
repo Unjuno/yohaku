@@ -9,7 +9,7 @@ import { readHostingBindings } from "../scripts/hosting-bindings.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const compiled = compileSources(root, [
-  "lib/config.ts", "lib/experience-gap-seeds.ts", "lib/field-seeds.ts", "lib/additional-seeds.ts", "lib/story-contract.ts", "lib/stories.ts", "lib/story-http.ts", "lib/webmcp.ts",
+  "lib/config.ts", "lib/discovery.ts", "lib/experience-gap-seeds.ts", "lib/field-seeds.ts", "lib/additional-seeds.ts", "lib/story-contract.ts", "lib/stories.ts", "lib/story-http.ts", "lib/webmcp.ts",
   "app/api/stories/route.ts", "app/api/compat/stories/route.ts",
 ]);
 after(compiled.clean);
