@@ -30,7 +30,7 @@ try{
   const catalog=await get("/api/stories");
   assert.equal(catalog.catalog_mode,"selection_only");
   assert.equal(catalog.count,PLAY_STORIES.length);
-  const project=({story_url:_,...row})=>row;
+  const project=story=>Object.fromEntries(Object.entries(story).filter(([key])=>key!=="story_url"));
   assert.deepEqual(catalog.stories.map(project),listStories());
   report.checks.push({name:"catalog_matches_checkout",result:"PASS",count:catalog.count});
   for(const row of catalog.stories){

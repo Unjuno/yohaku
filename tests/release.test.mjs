@@ -164,3 +164,26 @@ test("release: guide has tutorial, status, pause and internal-rule separation (s
     assert.ok(GM_GUIDE.includes(term),term);
   }
 });
+
+test("entrance: motion fails open and respects background tabs (source contract, not browser QA)",()=>{
+  const source=readFileSync(new URL("../components/yohaku-experience.tsx",import.meta.url),"utf8");
+  const css=readFileSync(new URL("../app/globals.css",import.meta.url),"utf8");
+  assert.ok(source.includes('!("IntersectionObserver" in window)'));
+  assert.ok(source.includes('document.addEventListener("visibilitychange", updateVisibility)'));
+  assert.ok(source.includes('document.removeEventListener("visibilitychange", updateVisibility)'));
+  assert.ok(css.includes('animation-play-state: paused !important'));
+  assert.ok(css.includes('.reveal-ready [data-reveal]:focus-within'));
+  assert.match(css,/@media \(prefers-reduced-motion: reduce\)[\s\S]*opacity: 1; transform: none/);
+});
+
+test("entrance: copy success and manual fallback retain distinct readable surfaces (source contract)",()=>{
+  const source=readFileSync(new URL("../components/yohaku-experience.tsx",import.meta.url),"utf8");
+  const css=readFileSync(new URL("../app/globals.css",import.meta.url),"utf8");
+  assert.ok(source.includes('copied && dialogKind === "start"'));
+  assert.ok(source.includes('className="copied-message"'));
+  assert.ok(source.includes('ref={textareaRef}'));
+  assert.ok(source.includes('className="handoff-next"'));
+  assert.ok(css.includes('max-height: calc(100svh - 2rem)'));
+  assert.ok(css.includes('white-space: normal'));
+  assert.ok(!source.includes('className="step-image"'));
+});
