@@ -79,6 +79,20 @@ test("release: supported dislikes are excluded, not positively keyword-matched",
   assert.equal(resolveDiscoveryIntent("zzzz").query,"zzzz");
   assert.deepEqual(searchStories({query:"zzzz"}),[]);
 });
+test("release: mood matching survives combined exclusions",()=>{
+  for(const [query,required,excluded] of [
+    ["笑いたい、ホラーなし",["コメディ"],["ホラー"]],
+    ["怖くないSF、恋愛なし",["SF","怖くない"],["恋愛","ホラー"]],
+    ["今日は変なのがいい、戦闘なし",[],["戦闘","ホラー"]],
+  ]){
+    const rows=searchStories({query,limit:20});assert.ok(rows.length,query);
+    for(const row of rows){
+      assert.ok(required.every(tag=>row.tags.includes(tag)),query);
+      assert.ok(excluded.every(tag=>!row.tags.includes(tag)),query);
+    }
+  }
+  assert.deepEqual(searchStories({query:"笑いたい、コメディなし"}),[]);
+});
 test("release: every exact title and ID still finds the original story first",()=>{
   for(const story of STORIES){
     for(const query of [story.id,story.title]) assert.equal(searchStories({query})[0]?.id,story.id,query);
