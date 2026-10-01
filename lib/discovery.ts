@@ -37,7 +37,10 @@ export function resolveDiscoveryIntent(query: string): DiscoveryIntent {
     remaining = remaining.replace(/笑いたくない/gu, () => { excludedTags.push("コメディ"); return ""; });
     if (excludedTags.length) {
       remaining = remaining.replace(/^(?:今日は|今は|いまは)/u, "").replace(/^[\s、,。・の]+|[\s、,。・]+$/gu, "");
-      return { ...empty, query: remaining, excludedTags, introductory: !remaining };
+      // Resolve the positive mood after removing dislikes as well: otherwise
+      // "笑いたい、ホラーなし" becomes an unmatched literal keyword query.
+      const positive = remaining ? resolveDiscoveryIntent(remaining) : { ...empty, query: "", introductory: true };
+      return { ...positive, excludedTags: [...new Set([...positive.excludedTags, ...excludedTags])] };
     }
     return { ...empty, query: normalized };
   }
