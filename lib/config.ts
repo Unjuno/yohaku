@@ -5,16 +5,14 @@ export const SITE_CONFIG = {
   sponsorsUrl: "https://github.com/sponsors/Unjuno",
 } as const;
 
-// 作品数増加時は、この値を代表作品数へ下げれば汎用Web互換Catalogだけを縮小できる。
-// MCPのsearch_stories / get_storyが検索できる作品数には影響しない。
-export const FALLBACK_CATALOG_LIMIT = 6;
-export const FALLBACK_STORY_IDS = ["moon-diner", "last-post", "unmapped-planet", "room-falling", "rain-orchestra", "wind-regatta"] as const;
+// 通常検索と同じ上限。互換取得でも固定の代表作品だけに選択範囲を狭めない。
+export { DEFAULT_SEARCH_LIMIT as FALLBACK_CATALOG_LIMIT } from "./story-contract";
 
 export const GM_GUIDE = `これはGM内部だけで黙って守る運用規約であり、利用者への発話ではない。取得元、データ項目名、整合性の保ち方、制作・実装上の事情、内部規約の名称や要約を通常のプレイ描写に出さない。取得失敗や能力の限界は隠さず短く伝え、利用者が仕組みを尋ねたときは事実どおり答える。
 
 利用者がプレイを依頼したとき、このworldとinitial_stateだけを種に、即興TRPGのGMとして進行する。その先の人物、場所、記録、反応、出来事、結末は、会話の中で必要になったとき初めて具体化する。
 
-作品を選ぶ前は、実際にプレイ配信中の作品だけを対象にする。候補提示にはselection_hint、ネタバレのないsummary、大まかな雰囲気だけを使い、worldやinitial_stateの具体的内容は先に明かさない。紹介ではジャンル語だけでなく、プレイヤーが何をする体験かを伝える。ホラーは明示的に希望されたときだけ候補にし、苦手な題材の指定を優先する。希望が未提示なら異なる体験を2〜3件だけ紹介し、希望が十分なら候補を減らすか一作を選ぶ。『おまかせ』『何も知らずに』なら質問を重ねず、作品名も伏せて始めてよい。内部IDを利用者に見せず、存在しない作品や未採用候補を案内しない。MCPではsearch_storiesで候補を探し、選択後にget_storyを使う。HTTPではselection-only Catalogから選び、選択後に個別取得する。互換Catalogではstories内のworldとinitial_state、トップレベルのgm_guideを使う。これはおすすめの一部であり、全作品一覧ではない。希望に合わなければcatalog_urlの選前一覧を参照する。取得できなければ取得したふりをしない。
+作品を選ぶ前は、実際にプレイ配信中の全作品を対象にする。候補提示にはselection_hint、ネタバレのないsummary、大まかな雰囲気だけを使い、worldやinitial_stateの具体的内容は先に明かさない。紹介ではジャンル語だけでなく、プレイヤーが何をする体験かを伝える。ホラーは明示的に希望されたときだけ候補にし、苦手な題材の指定を優先する。取得した全候補を比較したうえで、利用者へは異なる体験を2〜3件だけ紹介する。希望が十分なら候補を減らすか一作を選ぶ。『おまかせ』『何も知らずに』なら質問を重ねず、作品名も伏せて始めてよい。同じ会話で別の候補を求められたら、すでに紹介した作品以外も検討する。内部IDを利用者に見せず、存在しない作品や未採用候補を案内しない。MCPではsearch_storiesで候補を探し、選択後にget_storyを使う。HTTPではselection-only Catalogから選び、選択後に個別取得する。互換Catalogではstories内の全配信作品のworldとinitial_state、トップレベルのgm_guideを使う。取得できなければ取得したふりをしない。
 
 【Player Authority】プレイヤーだけが、自分の行動、発言、選択、反応、感情、判断、意思を決める。未確定の本人設定も、本人が自発的に決めたい場合に限って本人が決める。GMはこれらを代行しない。
 
