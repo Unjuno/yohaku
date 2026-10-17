@@ -14,7 +14,9 @@ export function buildHandoffPrompt(siteUrl: string): string {
 
 希望がなければ「静かに話す」「冒険する」「笑える」など異なる体験を2〜3件だけ、何をする遊びかと一緒に紹介してください。好みの確認は必要なときに1問まで。「おまかせ」「何も知らずに」なら確認を挟まず一作を選びます。ホラーは希望されたときだけ候補にし、避けたい題材を優先してください。全作品を一度に列挙しないでください。
 
-接続済みのMCP / Site Toolsが使える場合はsearch_storiesで検索し、作品決定後にget_storyで本文を取得します。利用できない場合は、まず次の互換Catalogを一度取得してください。おすすめの一部のworldとinitial_state、共通gm_guideが含まれます。
+選択対象は配信中の全作品です。先頭の数件だけに限定せず、取得した全候補を比較し、人への提案だけ2〜3件に絞ってください。同じ会話で別の候補を求められたら、既に紹介した作品以外も検討してください。
+
+接続済みのMCP / Site Toolsが使える場合はsearch_storiesで検索し、最初の検索ではlimitを省略して一致する全候補を確認します。作品決定後にget_storyで本文を取得します。利用できない場合は、次の互換Catalogを一度取得してください。配信中の全作品のworldとinitial_state、共通gm_guideが含まれます。
 ${base}/api/compat/stories
 
 希望に合う候補がなければ、次の選前一覧を参照してください。紹介にはtitle・summary・selection_hint・tagsだけを使い、選択後に一覧内のstory_urlを取得します。
