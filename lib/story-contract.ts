@@ -1,7 +1,7 @@
 /** Shared transport contract. This module must not import story bodies. */
-export const DEFAULT_SEARCH_LIMIT = 3;
-export const MAX_SEARCH_LIMIT = 20;
-export const SEARCH_DESCRIPTION = "好みに合う配信作品を探す。id、title、selection_hint、summary、tagsとcountだけを返す。本文やプレイ状態は返さない。";
+export const DEFAULT_SEARCH_LIMIT = 100;
+export const MAX_SEARCH_LIMIT = 100;
+export const SEARCH_DESCRIPTION = "好みに合う配信作品を全作品から探す。既定では一致する全候補（上限100件）のid、title、selection_hint、summary、tagsとcountを返す。利用者への提案はこの全体から2〜3件に絞る。本文やプレイ状態は返さない。";
 export const GET_DESCRIPTION = "選択済み作品のworld、initial_state、共通GMガイドを取得・再参照する。チャット作成や状態保存はしない。";
 export const SEARCH_INPUT_SCHEMA = {
   type: "object", additionalProperties: false,
