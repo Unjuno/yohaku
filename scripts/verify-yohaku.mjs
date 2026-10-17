@@ -20,13 +20,14 @@ for (const row of body.stories) {
   assert.ok(story.world && story.initial_state && story.gm_guide.includes("【Progressive Commitment】"));
 }
 for (const query of ["query=zzzz", "q=zzzz"]) assert.equal((await (await request(`/api/stories?${query}`)).json()).count,0);
-for (const limit of [0,-1,21,body.count,"NaN"]) {
+for (const limit of [0,-1,101,"NaN"]) {
   const response = await request(`/api/stories?limit=${limit}`);
   assert.equal(response.status,400);assert.equal((await response.json()).error,"invalid_limit");
 }
 const compat = await (await request("/api/compat/stories")).json();
-assert.equal(compat.selection_scope,"recommended_subset");assert.equal(compat.total_available,body.count);
-assert.equal(compat.count,6);assert.ok(compat.gm_guide);
+assert.equal(compat.selection_scope,"all_play");assert.equal(compat.total_available,body.count);
+assert.equal(compat.count,body.count);assert.ok(compat.gm_guide);
+assert.deepEqual(new Set(compat.stories.map(s=>s.id)),new Set(ids));
 for(const story of compat.stories) assert.ok(story.world&&story.initial_state&&!Object.hasOwn(story,"gm_guide"));
 
 const rpc = async (id,method,params={}) => {
@@ -36,6 +37,9 @@ const rpc = async (id,method,params={}) => {
   const value=JSON.parse(line?line.slice(6):raw);assert.ok(!value.error,JSON.stringify(value.error));return value;
 };
 const tools=await rpc(1,"tools/list");assert.deepEqual(tools.result.tools.map(t=>t.name),["search_stories","get_story"]);
+const allMcp=await rpc(2,"tools/call",{name:"search_stories",arguments:{}});
+assert.equal(allMcp.result.structuredContent.count,body.count);
+assert.deepEqual(new Set(allMcp.result.structuredContent.stories.map(s=>s.id)),new Set(ids));
 for(const query of ["","静かな","怖くないSF","探偵","ホラー","潜入","音楽","園芸","町づくり","ダンス","コメディ","恋愛","教育","調停","経営","共生","別れ","報道","保育","農業","物流","科学","儀礼","zzzz"]){
   const rest=await(await request(`/api/stories?query=${encodeURIComponent(query)}&limit=20`)).json();
   const mcp=await rpc(2,"tools/call",{name:"search_stories",arguments:{query,limit:20}});
