@@ -26,7 +26,7 @@ async function get(path){
 }
 try{
   const {PLAY_STORIES,listStories,searchStories,getStory}=await c.import("lib/stories.ts");
-  const {GM_GUIDE,FALLBACK_CATALOG_LIMIT}=await c.import("lib/config.ts");
+  const {GM_GUIDE}=await c.import("lib/config.ts");
   const catalog=await get("/api/stories");
   assert.equal(catalog.catalog_mode,"selection_only");
   assert.equal(catalog.count,PLAY_STORIES.length);
@@ -49,10 +49,12 @@ try{
     assert.deepEqual(result.stories.map(project),searchStories({query,limit:20}),query);
   }
   const fallback=await get("/api/compat/stories");
-  assert.equal(fallback.count,FALLBACK_CATALOG_LIMIT);assert.equal(fallback.total_available,PLAY_STORIES.length);
+  assert.equal(fallback.count,PLAY_STORIES.length);assert.equal(fallback.total_available,PLAY_STORIES.length);
+  assert.equal(fallback.selection_scope,"all_play");
+  assert.deepEqual(new Set(fallback.stories.map(story=>story.id)),new Set(PLAY_STORIES.map(story=>story.id)));
   assert.equal(fallback.gm_guide,GM_GUIDE);
   assert.ok(fallback.stories.every(story=>!Object.hasOwn(story,"gm_guide")));
-  report.checks.push({name:"discovery_and_bounded_fallback",result:"PASS"});
+  report.checks.push({name:"discovery_and_full_fallback",result:"PASS"});
   const home=await fetch(new URL("/",url.origin),{cache:"no-store",signal:AbortSignal.timeout(10000)});
   assert.equal(home.status,200,"home page inaccessible");const html=await home.text();
   assert.ok(html.includes("開始メッセージをコピー"),"new primary CTA is not present in server-rendered HTML");

@@ -33,11 +33,13 @@ test("release: all baseline 56 story objects are unchanged and remain playable",
     assert.ok(PLAY_STORIES.some(row=>row.id === id), id);
   }
 });
-test("release: complete listing retains canonical order; only bounded recommendations prioritize entry points", () => {
+test("release: complete listing and default discovery expose every playable story", () => {
   assert.deepEqual(listStories().map(row=>row.id), PLAY_STORIES.map(row=>row.id));
   const initial = searchStories();
-  assert.equal(initial.length,3);
-  assert.deepEqual(initial.map(row=>row.id), INTRO_STORY_IDS.slice(0,3));
+  assert.equal(initial.length,PLAY_STORIES.length);
+  assert.deepEqual(new Set(initial.map(row=>row.id)),new Set(PLAY_STORIES.map(row=>row.id)));
+  assert.deepEqual(initial.slice(0,INTRO_STORY_IDS.length).map(row=>row.id),INTRO_STORY_IDS);
+  assert.deepEqual(searchStories({limit:3}).map(row=>row.id),INTRO_STORY_IDS.slice(0,3));
   for(const id of INTRO_STORY_IDS) assert.ok(getStory(id),id);
 });
 const cases = [
@@ -104,11 +106,12 @@ test("release: no story content is added to discovery results",async()=>{
   }
 });
 
-test("release: handoff contains both usable URLs and bounded selection instructions",()=>{
+test("release: handoff contains both usable URLs and full-selection instructions",()=>{
   const text=buildHandoffPrompt("https://yohaku.test/");
   assert.ok(text.includes("https://yohaku.test/api/compat/stories"));
   assert.ok(text.includes("https://yohaku.test/api/stories"));
-  assert.ok(text.includes("2〜3件"));assert.ok(text.includes("取得失敗"));
+  assert.ok(text.includes("全作品"));assert.ok(text.includes("2〜3件"));assert.ok(text.includes("取得失敗"));
+  assert.ok(text.includes("既に紹介した作品以外"));
   assert.ok(text.includes("ホラーは希望されたときだけ"));
   assert.ok(text.length<1600);
   assert.throws(()=>buildHandoffPrompt("javascript:alert(1)"));

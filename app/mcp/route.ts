@@ -14,7 +14,7 @@ const handler = createMcpHandler(
           query: z.string().default("").describe("好みや雰囲気を表す検索語"),
           tags: z.array(z.string()).optional().describe("すべて一致させる任意タグ"),
           exclude_tags: z.array(z.string()).optional().describe("除外する任意タグ"),
-          limit: z.number().int().min(1).max(MAX_SEARCH_LIMIT).default(DEFAULT_SEARCH_LIMIT).describe("候補件数。1〜20"),
+          limit: z.number().int().min(1).max(MAX_SEARCH_LIMIT).default(DEFAULT_SEARCH_LIMIT).describe("AIが比較する候補件数。省略時は全候補（上限100件）。人への提案は2〜3件に絞る"),
         }),
         annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
       },

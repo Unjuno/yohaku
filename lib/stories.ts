@@ -1,4 +1,4 @@
-import { GM_GUIDE, FALLBACK_CATALOG_LIMIT, FALLBACK_STORY_IDS } from "./config";
+import { GM_GUIDE, FALLBACK_CATALOG_LIMIT } from "./config";
 import { ADDITIONAL_SEEDS } from "./additional-seeds";
 import { INTRO_STORY_IDS, resolveDiscoveryIntent } from "./discovery";
 import { DEFAULT_SEARCH_LIMIT, validateSearchInput, type SearchInput } from "./story-contract";
@@ -155,20 +155,13 @@ export function getStory(id: string) {
   };
 }
 
-/** Bounded one-fetch subset. The common guide is serialized once by the route. */
+/** One-fetch play catalog. The common guide is serialized once by the route. */
 export function getFallbackCatalogStories(rawInput: SearchInput = {}) {
   const input = validateSearchInput(rawInput);
   const limit = input.limit ?? FALLBACK_CATALOG_LIMIT;
   // Validate the configured default too, rather than silently clamping it.
   validateSearchInput({ limit });
-  const unfiltered = !normalize(input.query ?? "") &&
-    !(input.tags ?? []).some((tag) => normalize(tag)) &&
-    !(input.exclude_tags ?? []).some((tag) => normalize(tag));
-  let summaries = listStories({ ...input, limit: undefined });
-  if (unfiltered) {
-    const priority = new Map<string, number>(FALLBACK_STORY_IDS.map((id, index) => [id, index]));
-    summaries = summaries.sort((a, b) => (priority.get(a.id) ?? FALLBACK_STORY_IDS.length) - (priority.get(b.id) ?? FALLBACK_STORY_IDS.length));
-  }
+  const summaries = listStories({ ...input, limit: undefined });
   return summaries.slice(0, limit).map((summary) => {
     const story = storyById.get(summary.id)!;
     return { ...summary, world: story.world, initial_state: story.initial_state };

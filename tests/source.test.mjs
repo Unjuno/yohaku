@@ -48,18 +48,18 @@ for (const seed of ADDITIONAL_SEEDS) test(`Seed shape and discovery: ${seed.id}`
   assert.equal(searchStories({ query:seed.title })[0].id,seed.id);
   assert.equal(getStory(seed.id).initial_state,seed.initial_state);
 });
-test("full Catalog returns every source story even though search has a 20-result cap", async () => {
+test("full Catalog and default search return every source story", async () => {
   const response = catalogRoute.GET(request()); assert.equal(response.status,200);
   const data = await response.json(); assert.equal(data.catalog_mode,"selection_only"); assert.equal(data.count,expectedCount);
   for (const row of data.stories) {
     assert.deepEqual(Object.keys(row).filter(k=>k!=="story_url").sort(),rowKeys);
     assert.ok(row.story_url.endsWith(`/api/stories/${row.id}`));
   }
-  assert.equal(listStories().length,expectedCount); assert.equal(searchStories().length,3);
+  assert.equal(listStories().length,expectedCount); assert.equal(searchStories().length,expectedCount);
   assert.equal(searchStories({limit:20}).length,20);
   assert.equal((await catalogRoute.GET(request("?limit=20")).json()).count,20);
 });
-for (const raw of ["0","-1","NaN","21",String(expectedCount),"1.5","","abc","Infinity","1e1"])
+for (const raw of ["0","-1","NaN",String(MAX_SEARCH_LIMIT+1),"1.5","","abc","Infinity","1e1"])
   test(`invalid explicit limit ${JSON.stringify(raw)} is 400, never silently clamped`,async()=>{
     const response=catalogRoute.GET(request(`?limit=${encodeURIComponent(raw)}`));
     assert.equal(response.status,400); assert.equal((await response.json()).error,"invalid_limit");
@@ -73,10 +73,12 @@ test("all tags and exclude tags retain shared behavior",()=>{
   const result=searchStories({query:"",tags:["SF"],exclude_tags:["救助"],limit:20});
   assert.ok(result.length); assert.ok(result.every(s=>s.tags.includes("SF")&&!s.tags.includes("救助")));
 });
-test("one-fetch default is bounded; common guide appears once",async()=>{
+test("one-fetch compatibility Catalog includes all play stories; common guide appears once",async()=>{
   const data=await compatRoute.GET(request()).json();
-  assert.equal(data.count,FALLBACK_CATALOG_LIMIT); assert.equal(data.total_available,expectedCount);
-  assert.equal(data.selection_scope,"recommended_subset"); assert.equal(data.gm_guide,GM_GUIDE);
+  assert.ok(FALLBACK_CATALOG_LIMIT>=expectedCount);
+  assert.equal(data.count,expectedCount); assert.equal(data.total_available,expectedCount);
+  assert.equal(data.selection_scope,"all_play"); assert.equal(data.gm_guide,GM_GUIDE);
+  assert.deepEqual(new Set(data.stories.map(s=>s.id)),new Set(PLAY_STORIES.map(s=>s.id)));
   assert.ok(data.stories.some(s=>s.id==="unmapped-planet")); assert.ok(data.stories.some(s=>s.id==="rain-orchestra"));
   for(const s of data.stories) assert.ok(s.world&&s.initial_state&&!Object.hasOwn(s,"gm_guide"));
   assert.equal((JSON.stringify(data).match(/"gm_guide":/g)||[]).length,1);
@@ -102,6 +104,13 @@ test("WebMCP preserves selection_hint/count and matches REST and shared MCP core
     assert.deepEqual(result.stories.map(s=>s.id),rest.stories.map(s=>s.id));
     result.stories.forEach(row=>assert.deepEqual(Object.keys(row).sort(),rowKeys));
   }
+});
+test("default WebMCP search exposes every playable story without body fields",async()=>{
+  const [tool]=createWebTools(routeFetch);
+  const result=await tool.execute({});
+  assert.equal(result.count,expectedCount);
+  assert.deepEqual(new Set(result.stories.map(s=>s.id)),new Set(PLAY_STORIES.map(s=>s.id)));
+  result.stories.forEach(row=>assert.deepEqual(Object.keys(row).sort(),rowKeys));
 });
 test("WebMCP gets every story in the current source",async()=>{
   const [,tool]=createWebTools(routeFetch);
@@ -181,5 +190,5 @@ test("MCP source uses the same search/detail functions and limit constants",()=>
   const source=readFileSync(new URL("../app/mcp/route.ts",import.meta.url),"utf8");
   assert.ok(source.includes('from "@/lib/stories"'));assert.ok(source.includes("searchStories(input)"));
   assert.ok(source.includes("max(MAX_SEARCH_LIMIT).default(DEFAULT_SEARCH_LIMIT)"));
-  assert.equal(SEARCH_INPUT_SCHEMA.properties.limit.default,3);
+  assert.equal(SEARCH_INPUT_SCHEMA.properties.limit.default,100);
 });

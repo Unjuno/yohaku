@@ -11,7 +11,7 @@ export function catalogResponse(request: Request, compatibility = false): Respon
     }));
     const catalog_url = `${SITE_CONFIG.siteUrl}/api/stories`;
     return Response.json(compatibility
-      ? { compatibility_mode: "single_fetch", selection_scope: "recommended_subset", catalog_url,
+      ? { compatibility_mode: "single_fetch", selection_scope: stories.length === PLAY_STORIES.length ? "all_play" : "filtered_subset", catalog_url,
           total_available: PLAY_STORIES.length, gm_guide: GM_GUIDE, stories, count: stories.length }
       : { catalog_url, catalog_mode: "selection_only", stories, count: stories.length });
   } catch (error) {
